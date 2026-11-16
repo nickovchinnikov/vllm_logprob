@@ -1,5 +1,5 @@
-import torch
 import pytest
+import torch
 
 from src.reference import (
     apply_temperature,
@@ -7,7 +7,6 @@ from src.reference import (
     compute_processed_probs,
     compute_raw_probs,
 )
-
 
 LOGITS = torch.tensor([3.0, 2.0, 1.0, 0.0], dtype=torch.float64)
 
