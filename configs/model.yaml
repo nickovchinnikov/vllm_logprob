@@ -1,0 +1,4 @@
+model: Qwen/Qwen2.5-0.5B-Instruct
+prompt: Explain why the sky appears blue in one sentence.
+dtype: float16
+output_dir: data/model_logits/smollm2-135m

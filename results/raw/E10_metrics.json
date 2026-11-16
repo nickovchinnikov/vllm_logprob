@@ -1,0 +1,57 @@
+[
+  {
+    "experiment": "E10",
+    "seed": 11,
+    "samples": 1000,
+    "logits_dtype": "fp32",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "backend": "forward_native",
+    "tv_distance": 0.0035989687484601213,
+    "max_abs_error": 0.003598968748460135,
+    "calibration_error": 1.464424132674203e-07,
+    "tv_null_q95": 0.02045103125153987,
+    "tv_mc_pvalue": 0.7661691542288557,
+    "chi_square_mc_pvalue": 0.7661691542288557,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 2.2584836543160236e-06,
+      "mean_abs_logprob_error": 3.5129250781883306e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 9.473201192378156e-07,
+      "mean_abs_logprob_error": 5.375061710999329e-07,
+      "support_mismatch_count": 0
+    }
+  },
+  {
+    "experiment": "E10",
+    "seed": 23,
+    "samples": 1000,
+    "logits_dtype": "fp32",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "backend": "forward_native",
+    "tv_distance": 0.007401031251539875,
+    "max_abs_error": 0.007401031251539902,
+    "calibration_error": 3.0114873256591285e-07,
+    "tv_null_q95": 0.02164896874846012,
+    "tv_mc_pvalue": 0.5124378109452736,
+    "chi_square_mc_pvalue": 0.5124378109452736
+  },
+  {
+    "experiment": "E10",
+    "seed": 37,
+    "samples": 1000,
+    "logits_dtype": "fp32",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "backend": "forward_native",
+    "tv_distance": 0.0005989687484601325,
+    "max_abs_error": 0.0005989687484601602,
+    "calibration_error": 2.4372100767420754e-08,
+    "tv_null_q95": 0.018410928126385895,
+    "tv_mc_pvalue": 0.9751243781094527,
+    "chi_square_mc_pvalue": 0.9751243781094527
+  }
+]

@@ -1,0 +1,48 @@
+sampling:
+  samples_per_seed: 100000
+  seeds: [11, 23, 37]
+  batch_size: 256
+  mc_replicates: 200
+
+experiments:
+  - id: E1
+    logits_dtype: fp32
+    temperature: 1.0
+    top_p: 1.0
+    greedy: true
+  - id: E2
+    logits_dtype: fp32
+    temperature: 1.0
+    top_p: 1.0
+  - id: E3
+    logits_dtype: fp32
+    temperature: 0.7
+    top_p: 1.0
+  - id: E4
+    logits_dtype: fp32
+    temperature: 1.5
+    top_p: 1.0
+  - id: E5
+    logits_dtype: fp32
+    temperature: 1.0
+    top_p: 0.9
+  - id: E6
+    logits_dtype: fp32
+    temperature: 1.0
+    top_p: 0.5
+  - id: E7
+    logits_dtype: fp16
+    temperature: 1.0
+    top_p: 1.0
+  - id: E8
+    logits_dtype: bf16
+    temperature: 1.0
+    top_p: 1.0
+  - id: E9
+    logits_dtype: fp32
+    temperature: 1.0
+    top_p: 1.0
+  - id: E10
+    logits_dtype: fp32
+    temperature: 0.7
+    top_p: 0.9

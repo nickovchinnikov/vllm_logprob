@@ -1,0 +1,57 @@
+[
+  {
+    "experiment": "E4",
+    "seed": 11,
+    "samples": 1000,
+    "logits_dtype": "fp32",
+    "temperature": 1.5,
+    "top_p": 1.0,
+    "backend": "forward_native",
+    "tv_distance": 0.38424976550249335,
+    "max_abs_error": 0.013752695959365874,
+    "calibration_error": 6.372595332430363e-07,
+    "tv_null_q95": 0.3910505817665827,
+    "tv_mc_pvalue": 0.19402985074626866,
+    "chi_square_mc_pvalue": 0.39303482587064675,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 2.2584836543160236e-06,
+      "mean_abs_logprob_error": 3.5129250781883306e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 1.924060978097941e-06,
+      "mean_abs_logprob_error": 3.0156421099524416e-07,
+      "support_mismatch_count": 0
+    }
+  },
+  {
+    "experiment": "E4",
+    "seed": 23,
+    "samples": 1000,
+    "logits_dtype": "fp32",
+    "temperature": 1.5,
+    "top_p": 1.0,
+    "backend": "forward_native",
+    "tv_distance": 0.3724166741164409,
+    "max_abs_error": 0.01124730404063412,
+    "calibration_error": 8.507728812506093e-07,
+    "tv_null_q95": 0.3919225703086068,
+    "tv_mc_pvalue": 0.5870646766169154,
+    "chi_square_mc_pvalue": 0.42786069651741293
+  },
+  {
+    "experiment": "E4",
+    "seed": 37,
+    "samples": 1000,
+    "logits_dtype": "fp32",
+    "temperature": 1.5,
+    "top_p": 1.0,
+    "backend": "forward_native",
+    "tv_distance": 0.3909358104710379,
+    "max_abs_error": 0.018752695959365878,
+    "calibration_error": 7.630491519923974e-07,
+    "tv_null_q95": 0.3898210004762957,
+    "tv_mc_pvalue": 0.04975124378109453,
+    "chi_square_mc_pvalue": 0.5074626865671642
+  }
+]
