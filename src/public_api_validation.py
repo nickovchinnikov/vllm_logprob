@@ -33,8 +33,8 @@ def run(
         raise ValueError("samples must be positive")
     os.environ["VLLM_USE_FLASHINFER_SAMPLER"] = "0"
     os.environ["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
-    from vllm import LLM, SamplingParams
     import vllm
+    from vllm import LLM, SamplingParams
 
     logits = torch.load(logits_path, map_location="cpu", weights_only=True).float()
     raw_reference = compute_raw_probs(logits)

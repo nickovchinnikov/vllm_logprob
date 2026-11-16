@@ -9,8 +9,8 @@ class VLLMDirectSampler:
     def __init__(self, device: str = "cuda") -> None:
         try:
             import vllm
-            from vllm.v1.sample.sampler import Sampler
             from vllm.v1.sample.ops.topk_topp_sampler import TopKTopPSampler
+            from vllm.v1.sample.sampler import Sampler
         except ImportError as error:
             raise RuntimeError(
                 "Install the pinned dependencies to use the direct vLLM sampler"
