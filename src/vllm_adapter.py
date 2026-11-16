@@ -27,6 +27,7 @@ class VLLMDirectSampler:
         self.device = torch.device(device)
         self.sampler = TopKTopPSampler(logprobs_mode="processed_logprobs")
         self.vllm_sampler = Sampler(logprobs_mode="raw_logprobs")
+        self.sampler_input_dtype: str | None = None
         backend = getattr(self.sampler.forward, "__name__", "unknown")
         if backend != "forward_native":
             raise RuntimeError(f"Expected native sampling backend, got {backend}")
@@ -37,6 +38,7 @@ class VLLMDirectSampler:
         source = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
         if source.ndim != 1:
             raise ValueError("logits must be a one-dimensional vector")
+        self.sampler_input_dtype = str(source.dtype)
         batched = source.unsqueeze(0)
         token_id = int(self.vllm_sampler.greedy_sample(batched)[0].item())
         raw_logprobs = self.vllm_sampler.compute_logprobs(batched)[0].cpu()
@@ -71,6 +73,9 @@ class VLLMDirectSampler:
         for start in range(0, sample_count, batch_size):
             current_batch = min(batch_size, sample_count - start)
             batch_logits = (source / temperature).expand(current_batch, -1).contiguous()
+            if batch_logits.dtype != torch.float32:
+                raise RuntimeError(f"Expected FP32 sampler input, got {batch_logits.dtype}")
+            self.sampler_input_dtype = str(batch_logits.dtype)
             top_p_values = torch.full(
                 (current_batch,), top_p, dtype=torch.float32, device=self.device
             )

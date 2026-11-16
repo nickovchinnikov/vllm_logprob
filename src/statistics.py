@@ -19,27 +19,66 @@ def _distribution(values: torch.Tensor, name: str) -> torch.Tensor:
 def compare_distributions(
     reference: torch.Tensor, empirical: torch.Tensor
 ) -> dict[str, float]:
-    """Return TV distance, maximum absolute error, and calibration-style ECE."""
+    """Return sampling-fidelity metrics that do not pool token categories."""
     expected = _distribution(reference, "reference")
     observed = _distribution(empirical, "empirical")
     if expected.shape != observed.shape:
         raise ValueError("reference and empirical must have the same shape")
 
     absolute_error = torch.abs(expected - observed)
-    bin_edges = torch.tensor([0.01, 0.05, 0.10, 0.25], dtype=torch.float64)
-    bins = torch.bucketize(expected, bin_edges, right=True)
-    ece = 0.0
-    for bin_id in range(bin_edges.numel() + 1):
-        members = bins == bin_id
-        if members.any():
-            ece += members.sum().item() / expected.numel() * torch.abs(
-                expected[members].mean() - observed[members].mean()
-            ).item()
 
     return {
         "tv_distance": 0.5 * absolute_error.sum().item(),
         "max_abs_error": absolute_error.max().item(),
-        "calibration_error": ece,
+    }
+
+
+def token_bin_calibration_diagnostic(
+    reference: torch.Tensor, empirical: torch.Tensor
+) -> float:
+    """Return the plan's token-probability-bin diagnostic, not event ECE.
+
+    Token errors can cancel within a probability bin, so this value is kept
+    separate from the primary sampling-fidelity metrics.
+    """
+    expected = _distribution(reference, "reference")
+    observed = _distribution(empirical, "empirical")
+    if expected.shape != observed.shape:
+        raise ValueError("reference and empirical must have the same shape")
+
+    bin_edges = torch.tensor([0.01, 0.05, 0.10, 0.25], dtype=torch.float64)
+    bins = torch.bucketize(expected, bin_edges, right=True)
+    diagnostic = 0.0
+    for bin_id in range(bin_edges.numel() + 1):
+        members = bins == bin_id
+        if members.any():
+            diagnostic += members.sum().item() / expected.numel() * torch.abs(
+                expected[members].mean() - observed[members].mean()
+            ).item()
+    return diagnostic
+
+
+def distribution_diagnostics(
+    before_filter: torch.Tensor, after_filter: torch.Tensor
+) -> dict[str, float | int]:
+    """Summarize support, entropy, peak mass, and retained pre-filter mass."""
+    before = _distribution(before_filter, "before_filter")
+    after = _distribution(after_filter, "after_filter")
+    if before.shape != after.shape:
+        raise ValueError("before_filter and after_filter must have the same shape")
+    retained = after > 0
+
+    def entropy(probabilities: torch.Tensor) -> float:
+        positive = probabilities[probabilities > 0]
+        return -(positive * positive.log()).sum().item()
+
+    return {
+        "support_before_filter": int(torch.count_nonzero(before).item()),
+        "support_after_filter": int(torch.count_nonzero(after).item()),
+        "entropy_before_filter": entropy(before),
+        "entropy_after_filter": entropy(after),
+        "top_probability_after_filter": after.max().item(),
+        "retained_pre_filter_mass": before[retained].sum().item(),
     }
 
 
@@ -64,6 +103,7 @@ def multinomial_baseline(
     observed_counts: torch.Tensor,
     replicates: int = 200,
     seed: int = 0,
+    null_samples: tuple[torch.Tensor, torch.Tensor] | None = None,
 ) -> dict[str, float]:
     """Estimate TV and chi-square null distributions by multinomial simulation."""
     expected = _distribution(probabilities, "probabilities")
@@ -81,6 +121,39 @@ def multinomial_baseline(
     )["tv_distance"]
     observed_chi_square = chi_square_statistic(expected, observed)
 
+    if null_samples is None:
+        tv_values, chi_square_values = multinomial_null_distributions(
+            expected, sample_count, replicates, seed
+        )
+    else:
+        tv_values = torch.as_tensor(null_samples[0], dtype=torch.float64, device="cpu")
+        chi_square_values = torch.as_tensor(null_samples[1], dtype=torch.float64, device="cpu")
+        if tv_values.shape != chi_square_values.shape or tv_values.numel() == 0:
+            raise ValueError("null sample vectors must have matching non-empty shapes")
+    actual_replicates = tv_values.numel()
+
+    return {
+        "tv_null_q95": torch.quantile(tv_values, 0.95).item(),
+        "tv_mc_pvalue": (1 + torch.count_nonzero(tv_values >= observed_tv).item())
+        / (actual_replicates + 1),
+        "chi_square_mc_pvalue": (
+            1 + torch.count_nonzero(chi_square_values >= observed_chi_square).item()
+        )
+        / (actual_replicates + 1),
+    }
+
+
+def multinomial_null_distributions(
+    probabilities: torch.Tensor,
+    sample_count: int,
+    replicates: int = 200,
+    seed: int = 0,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return simulated TV and Pearson-statistic null samples."""
+    expected = _distribution(probabilities, "probabilities")
+    if sample_count < 1 or replicates < 1:
+        raise ValueError("sample_count and replicates must be positive")
+
     generator = torch.Generator(device="cpu").manual_seed(seed)
     tv_values = torch.empty(replicates, dtype=torch.float64)
     chi_square_values = torch.empty(replicates, dtype=torch.float64)
@@ -90,13 +163,4 @@ def multinomial_baseline(
         frequencies = counts.to(torch.float64) / sample_count
         tv_values[index] = 0.5 * torch.abs(expected - frequencies).sum()
         chi_square_values[index] = chi_square_statistic(expected, counts)
-
-    return {
-        "tv_null_q95": torch.quantile(tv_values, 0.95).item(),
-        "tv_mc_pvalue": (1 + torch.count_nonzero(tv_values >= observed_tv).item())
-        / (replicates + 1),
-        "chi_square_mc_pvalue": (
-            1 + torch.count_nonzero(chi_square_values >= observed_chi_square).item()
-        )
-        / (replicates + 1),
-    }
+    return tv_values, chi_square_values

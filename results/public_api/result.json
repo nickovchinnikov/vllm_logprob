@@ -1,0 +1,31 @@
+{
+  "validation": "public_offline_llm_generate",
+  "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+  "prompt": "The sky appears blue because",
+  "logits_file_for_reference_only": "data/model_logits/smollm2-135m-fp32/logits_fp32.pt",
+  "reference_logits_are_recomputed_by_vllm": true,
+  "vllm_version": "0.11.0",
+  "logprobs_mode": "raw_logprobs",
+  "sampler_backend_env": "0",
+  "v1_multiprocessing_enabled": false,
+  "samples": 10000,
+  "seed": 11,
+  "temperature": 1.0,
+  "top_p": 0.9,
+  "reference_comparison": {
+    "tv_distance": 0.00953877599630278,
+    "max_abs_error": 0.006918401491775028,
+    "tv_null_q95": 0.014183625791989337,
+    "tv_mc_pvalue": 0.42786069651741293,
+    "chi_square_mc_pvalue": 0.8059701492537313,
+    "support_before_filter": 49152,
+    "support_after_filter": 12,
+    "entropy_before_filter": 2.271364376820414,
+    "entropy_after_filter": 1.615215727214221,
+    "top_probability_after_filter": 0.44678159850822496,
+    "retained_pre_filter_mass": 0.9027007417820436
+  },
+  "sampled_raw_logprob_max_abs_error": 1.0491200420403857e-05,
+  "sampled_raw_logprob_mean_abs_error": 1.253615527458507e-06
+}

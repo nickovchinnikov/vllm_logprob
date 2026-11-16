@@ -1,0 +1,86 @@
+{
+  "vllm_version": "0.11.0",
+  "vllm_commit": "b8b302cde434df8c9289a2b465406b47ebab1c2d",
+  "backend": "forward_native",
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 5090 Laptop GPU",
+  "python_version": "3.13.12",
+  "torch_version": "2.8.0+cu128",
+  "cuda_version": "12.8",
+  "logits_file": "data/model_logits/smollm2-135m-fp32/logits_fp32.pt",
+  "model_metadata": {
+    "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "requested_revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+    "resolved_revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+    "tokenizer_revision": null,
+    "prompt": "The sky appears blue because",
+    "model_dtype": "float32",
+    "logits_dtype": "float32",
+    "logits_shape": [
+      49152
+    ],
+    "input_ids": [
+      504,
+      6376,
+      4541,
+      4461,
+      975
+    ],
+    "logits_file": "data/model_logits/smollm2-135m-fp32/logits_fp32.pt"
+  },
+  "samples_per_seed": 100000,
+  "seeds": {
+    "E1": [
+      11,
+      23,
+      37
+    ],
+    "E2": [
+      11,
+      23,
+      37
+    ],
+    "E3": [
+      11,
+      23,
+      37
+    ],
+    "E4": [
+      11,
+      23,
+      37,
+      51,
+      67
+    ],
+    "E5": [
+      11,
+      23,
+      37
+    ],
+    "E6": [
+      11,
+      23,
+      37
+    ],
+    "E7": [
+      11,
+      23,
+      37
+    ],
+    "E8": [
+      11,
+      23,
+      37
+    ],
+    "E9": [
+      11,
+      23,
+      37
+    ],
+    "E10": [
+      11,
+      23,
+      37
+    ]
+  }
+}

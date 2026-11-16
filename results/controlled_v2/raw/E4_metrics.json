@@ -1,0 +1,172 @@
+[
+  {
+    "experiment": "E4",
+    "seed": 11,
+    "samples": 100000,
+    "logits_dtype": "fp32",
+    "temperature": 1.5,
+    "top_p": 1.0,
+    "sampler_input_dtype": "torch.float32",
+    "input_quantization_max_abs": 0.0,
+    "input_quantization_changed_logits": 0,
+    "backend": "forward_native",
+    "tv_distance": 0.06821193413298267,
+    "max_abs_error": 0.0014857281888689053,
+    "tv_null_q95": 0.06925941154376668,
+    "tv_mc_pvalue": 0.3283582089552239,
+    "chi_square_mc_pvalue": 0.9900497512437811,
+    "token_bin_calibration_diagnostic": 7.725436411985678e-08,
+    "support_before_filter": 49152,
+    "support_after_filter": 49152,
+    "entropy_before_filter": 5.2100146390891515,
+    "entropy_after_filter": 5.2100146390891515,
+    "top_probability_after_filter": 0.16245849296619252,
+    "retained_pre_filter_mass": 0.9999999999999979,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 2.391044219507421e-06,
+      "mean_abs_logprob_error": 4.4200362688430873e-07,
+      "support_mismatch_count": 0
+    }
+  },
+  {
+    "experiment": "E4",
+    "seed": 23,
+    "samples": 100000,
+    "logits_dtype": "fp32",
+    "temperature": 1.5,
+    "top_p": 1.0,
+    "sampler_input_dtype": "torch.float32",
+    "input_quantization_max_abs": 0.0,
+    "input_quantization_changed_logits": 0,
+    "backend": "forward_native",
+    "tv_distance": 0.06914898871296402,
+    "max_abs_error": 0.0018684929661925143,
+    "tv_null_q95": 0.0696498600854665,
+    "tv_mc_pvalue": 0.0845771144278607,
+    "chi_square_mc_pvalue": 0.9900497512437811,
+    "token_bin_calibration_diagnostic": 1.4020133820332558e-07,
+    "support_before_filter": 49152,
+    "support_after_filter": 49152,
+    "entropy_before_filter": 5.2100146390891515,
+    "entropy_after_filter": 5.2100146390891515,
+    "top_probability_after_filter": 0.16245849296619252,
+    "retained_pre_filter_mass": 0.9999999999999979,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 2.391044219507421e-06,
+      "mean_abs_logprob_error": 4.4200362688430873e-07,
+      "support_mismatch_count": 0
+    }
+  },
+  {
+    "experiment": "E4",
+    "seed": 37,
+    "samples": 100000,
+    "logits_dtype": "fp32",
+    "temperature": 1.5,
+    "top_p": 1.0,
+    "sampler_input_dtype": "torch.float32",
+    "input_quantization_max_abs": 0.0,
+    "input_quantization_changed_logits": 0,
+    "backend": "forward_native",
+    "tv_distance": 0.06692289621253172,
+    "max_abs_error": 0.00067475354665434,
+    "tv_null_q95": 0.06945938081673766,
+    "tv_mc_pvalue": 0.8656716417910447,
+    "chi_square_mc_pvalue": 0.9900497512437811,
+    "token_bin_calibration_diagnostic": 3.1917802421674354e-08,
+    "support_before_filter": 49152,
+    "support_after_filter": 49152,
+    "entropy_before_filter": 5.2100146390891515,
+    "entropy_after_filter": 5.2100146390891515,
+    "top_probability_after_filter": 0.16245849296619252,
+    "retained_pre_filter_mass": 0.9999999999999979,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 2.391044219507421e-06,
+      "mean_abs_logprob_error": 4.4200362688430873e-07,
+      "support_mismatch_count": 0
+    }
+  },
+  {
+    "experiment": "E4",
+    "seed": 51,
+    "samples": 100000,
+    "logits_dtype": "fp32",
+    "temperature": 1.5,
+    "top_p": 1.0,
+    "sampler_input_dtype": "torch.float32",
+    "input_quantization_max_abs": 0.0,
+    "input_quantization_changed_logits": 0,
+    "backend": "forward_native",
+    "tv_distance": 0.068800294730757,
+    "max_abs_error": 0.002016494975379382,
+    "tv_null_q95": 0.06955522375694181,
+    "tv_mc_pvalue": 0.13930348258706468,
+    "chi_square_mc_pvalue": 0.9751243781094527,
+    "token_bin_calibration_diagnostic": 8.20513905997057e-08,
+    "support_before_filter": 49152,
+    "support_after_filter": 49152,
+    "entropy_before_filter": 5.2100146390891515,
+    "entropy_after_filter": 5.2100146390891515,
+    "top_probability_after_filter": 0.16245849296619252,
+    "retained_pre_filter_mass": 0.9999999999999979,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 2.391044219507421e-06,
+      "mean_abs_logprob_error": 4.4200362688430873e-07,
+      "support_mismatch_count": 0
+    }
+  },
+  {
+    "experiment": "E4",
+    "seed": 67,
+    "samples": 100000,
+    "logits_dtype": "fp32",
+    "temperature": 1.5,
+    "top_p": 1.0,
+    "sampler_input_dtype": "torch.float32",
+    "input_quantization_max_abs": 0.0,
+    "input_quantization_changed_logits": 0,
+    "backend": "forward_native",
+    "tv_distance": 0.06590359151493105,
+    "max_abs_error": 0.0012126827803403337,
+    "tv_null_q95": 0.06951983660996906,
+    "tv_mc_pvalue": 0.9900497512437811,
+    "chi_square_mc_pvalue": 0.9552238805970149,
+    "token_bin_calibration_diagnostic": 5.911534460236656e-08,
+    "support_before_filter": 49152,
+    "support_after_filter": 49152,
+    "entropy_before_filter": 5.2100146390891515,
+    "entropy_after_filter": 5.2100146390891515,
+    "top_probability_after_filter": 0.16245849296619252,
+    "retained_pre_filter_mass": 0.9999999999999979,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 2.391044219507421e-06,
+      "mean_abs_logprob_error": 4.4200362688430873e-07,
+      "support_mismatch_count": 0
+    }
+  }
+]

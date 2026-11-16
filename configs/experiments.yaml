@@ -22,6 +22,7 @@ experiments:
     logits_dtype: fp32
     temperature: 1.5
     top_p: 1.0
+    seeds: [11, 23, 37, 51, 67]
   - id: E5
     logits_dtype: fp32
     temperature: 1.0
@@ -30,14 +31,17 @@ experiments:
     logits_dtype: fp32
     temperature: 1.0
     top_p: 0.5
+    minimum_support_after_filter: 2
   - id: E7
     logits_dtype: fp16
     temperature: 1.0
     top_p: 1.0
+    require_quantization_change: true
   - id: E8
     logits_dtype: bf16
     temperature: 1.0
     top_p: 1.0
+    require_quantization_change: true
   - id: E9
     logits_dtype: fp32
     temperature: 1.0

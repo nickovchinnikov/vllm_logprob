@@ -9,6 +9,9 @@ from pathlib import Path
 
 import torch
 
+from src.reference import compute_processed_probs
+from src.statistics import distribution_diagnostics
+
 
 def _read_summary(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as handle:
@@ -34,6 +37,14 @@ def generate_report(output_dir: Path) -> None:
     figures_dir.mkdir(parents=True, exist_ok=True)
     rows = _read_summary(output_dir / "summary.csv")
     sample_rows = [row for row in rows if row.get("seed")]
+    metadata_path = output_dir / "run_metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
+    logits_path = Path(metadata["logits_file"]) if metadata.get("logits_file") else None
+    base_logits = (
+        torch.load(logits_path, map_location="cpu", weights_only=True).float()
+        if logits_path is not None and logits_path.exists()
+        else None
+    )
 
     baseline = next((row for row in sample_rows if row["experiment"] == "E2"), None)
     if baseline is not None:
@@ -104,8 +115,6 @@ def generate_report(output_dir: Path) -> None:
     figure.savefig(figures_dir / "tv_by_configuration.png", dpi=160)
     plt.close(figure)
 
-    metadata_path = output_dir / "run_metadata.json"
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
     report_lines = [
         "# Sampling Fidelity Results",
         "",
@@ -115,32 +124,17 @@ def generate_report(output_dir: Path) -> None:
         f"- Device: `{metadata.get('device', 'not recorded')}`",
         f"- Samples per seed: `{metadata.get('samples_per_seed', 'not run')}`",
         "",
-        "The plots and table summarize fixed-logit controlled sampling. TV comparisons must be read alongside the multinomial null baseline; a small Monte Carlo p-value alone is not evidence of a practically important mismatch.",
+        "The table reports each seed separately. Read empirical TV against that seed's multinomial null baseline; p-values are not averaged. The token-bin calibration diagnostic is retained in the CSV but excluded here because token errors can cancel within bins.",
         "",
-        "| ID | TV (mean +/- SD) | MC TV p-value | Max probability error | ECE | "
-        "Raw logprob max error | Processed logprob max error |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| ID | Seed | N | TV | Null TV q95 | TV MC p | Chi-square MC p | "
+        "Max probability error | Support | Entropy | Raw logprob max error | Processed logprob max error |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
-    all_experiment_ids = ["E1", *experiment_ids]
-    for experiment_id in all_experiment_ids:
-        group = [row for row in sample_rows if row["experiment"] == experiment_id]
-        if group:
-            tv_mean = sum(float(row["tv_distance"]) for row in group) / len(group)
-            tv_sd = deviations[experiment_ids.index(experiment_id)]
-            p_values = [float(row["tv_mc_pvalue"]) for row in group]
-            error_values = [float(row["max_abs_error"]) for row in group]
-            calibration_values = [float(row["calibration_error"]) for row in group]
-            tv_text = f"{tv_mean:.6g} +/- {tv_sd:.3g}"
-            p_text = f"{sum(p_values) / len(p_values):.4g}"
-            error_text = f"{sum(error_values) / len(error_values):.6g}"
-            calibration_text = f"{sum(calibration_values) / len(calibration_values):.6g}"
-        else:
-            tv_text = p_text = error_text = calibration_text = "n/a"
-        first_row = next((row for row in rows if row["experiment"] == experiment_id), {})
-        raw_logprobs = json.loads(first_row["raw_logprobs"]) if first_row.get("raw_logprobs") else {}
+    for row in rows:
+        raw_logprobs = json.loads(row["raw_logprobs"]) if row.get("raw_logprobs") else {}
         processed_logprobs = (
-            json.loads(first_row["processed_logprobs"])
-            if first_row.get("processed_logprobs")
+            json.loads(row["processed_logprobs"])
+            if row.get("processed_logprobs")
             else {}
         )
         raw_error = raw_logprobs.get("max_abs_logprob_error", "n/a")
@@ -151,14 +145,91 @@ def generate_report(output_dir: Path) -> None:
             if isinstance(processed_error, (float, int))
             else processed_error
         )
-        report_lines.append(
-            f"| {experiment_id} | {tv_text} | {p_text} | {error_text} | "
-            f"{calibration_text} | {raw_text} | {processed_text} |"
+        support = row.get("support_after_filter", "n/a")
+        entropy = row.get("entropy_after_filter", "n/a")
+        if support not in ("", "n/a"):
+            support = str(int(float(support)))
+            entropy = f"{float(entropy):.5g}"
+        values = [
+            row.get("experiment", ""),
+            row.get("seed") or "greedy",
+            row.get("samples", ""),
+            row.get("tv_distance", "n/a"),
+            row.get("tv_null_q95", "n/a"),
+            row.get("tv_mc_pvalue", "n/a"),
+            row.get("chi_square_mc_pvalue", "n/a"),
+            row.get("max_abs_error", "n/a"),
+            support,
+            entropy,
+            raw_text,
+            processed_text,
+        ]
+        report_lines.append("| " + " | ".join(str(value) for value in values) + " |")
+    if base_logits is not None:
+        dtype_by_name = {
+            "fp32": torch.float32,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }
+        top_p_rows = {}
+        precision_rows = {}
+        for row in rows:
+            experiment_id = row.get("experiment", "")
+            if row.get("top_p") and float(row["top_p"]) < 1 and experiment_id not in top_p_rows:
+                values = base_logits.to(dtype_by_name[row["logits_dtype"]]).float()
+                before = compute_processed_probs(
+                    values, temperature=float(row["temperature"]), top_p=1.0
+                )
+                after = compute_processed_probs(
+                    values,
+                    temperature=float(row["temperature"]),
+                    top_p=float(row["top_p"]),
+                )
+                top_p_rows[experiment_id] = (
+                    distribution_diagnostics(before, after),
+                    before.max().item(),
+                    float(row["top_p"]),
+                )
+            if experiment_id in {"E7", "E8", "E9"} and experiment_id not in precision_rows:
+                precision_rows[experiment_id] = row
+
+        report_lines.extend(
+            [
+                "",
+                "## Top-p Diagnostics",
+                "",
+                "| ID | top-p | Support before -> after | Entropy before -> after | Top token p before -> after | Retained pre-filter mass |",
+                "| --- | ---: | ---: | ---: | ---: | ---: |",
+            ]
         )
+        for experiment_id, (diagnostics, p_before, top_p) in top_p_rows.items():
+            report_lines.append(
+                f"| {experiment_id} | {top_p:g} | "
+                f"{diagnostics['support_before_filter']} -> {diagnostics['support_after_filter']} | "
+                f"{diagnostics['entropy_before_filter']:.5g} -> {diagnostics['entropy_after_filter']:.5g} | "
+                f"{p_before:.6g} -> {diagnostics['top_probability_after_filter']:.6g} | "
+                f"{diagnostics['retained_pre_filter_mass']:.6g} |"
+            )
+
+        report_lines.extend(
+            [
+                "",
+                "## Input Precision",
+                "",
+                "| ID | Quantization dtype -> sampler dtype | Changed logits | Max absolute quantization delta |",
+                "| --- | --- | ---: | ---: |",
+            ]
+        )
+        for experiment_id, row in precision_rows.items():
+            report_lines.append(
+                f"| {experiment_id} | {row['logits_dtype']} -> {row['sampler_input_dtype']} | "
+                f"{row['input_quantization_changed_logits']} | "
+                f"{float(row['input_quantization_max_abs']):.6g} |"
+            )
     report_lines.extend(
         [
             "",
-            "Figures: `figures/reference_vs_empirical.png`, `figures/temperature_impact.png`, `figures/probability_error.png`, and `figures/tv_by_configuration.png`.",
+            "Per-seed Monte Carlo samples are saved in `raw/*_mc_null.pt`. Figures: `figures/reference_vs_empirical.png`, `figures/temperature_impact.png`, `figures/probability_error.png`, and `figures/tv_by_configuration.png`.",
             "",
             "The direct sampler bypasses the public inference API and the outer `Sampler.forward` metadata path. See [`vllm-semantics.md`](../vllm-semantics.md) for interpretation and limitations.",
         ]

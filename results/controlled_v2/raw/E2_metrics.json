@@ -1,0 +1,104 @@
+[
+  {
+    "experiment": "E2",
+    "seed": 11,
+    "samples": 100000,
+    "logits_dtype": "fp32",
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "sampler_input_dtype": "torch.float32",
+    "input_quantization_max_abs": 0.0,
+    "input_quantization_changed_logits": 0,
+    "backend": "forward_native",
+    "tv_distance": 0.01202109230780794,
+    "max_abs_error": 0.0011292504168085027,
+    "tv_null_q95": 0.013869391583707346,
+    "tv_mc_pvalue": 0.572139303482587,
+    "chi_square_mc_pvalue": 0.9850746268656716,
+    "token_bin_calibration_diagnostic": 8.980361581921533e-08,
+    "support_before_filter": 49152,
+    "support_after_filter": 49152,
+    "entropy_before_filter": 2.271364376820414,
+    "entropy_after_filter": 2.271364376820414,
+    "top_probability_after_filter": 0.40331008038794186,
+    "retained_pre_filter_mass": 0.9999999999999993,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    }
+  },
+  {
+    "experiment": "E2",
+    "seed": 23,
+    "samples": 100000,
+    "logits_dtype": "fp32",
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "sampler_input_dtype": "torch.float32",
+    "input_quantization_max_abs": 0.0,
+    "input_quantization_changed_logits": 0,
+    "backend": "forward_native",
+    "tv_distance": 0.012213688221759287,
+    "max_abs_error": 0.0022476828576223906,
+    "tv_null_q95": 0.013987596305646414,
+    "tv_mc_pvalue": 0.4975124378109453,
+    "chi_square_mc_pvalue": 1.0,
+    "token_bin_calibration_diagnostic": 1.4432508440882077e-07,
+    "support_before_filter": 49152,
+    "support_after_filter": 49152,
+    "entropy_before_filter": 2.271364376820414,
+    "entropy_after_filter": 2.271364376820414,
+    "top_probability_after_filter": 0.40331008038794186,
+    "retained_pre_filter_mass": 0.9999999999999993,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    }
+  },
+  {
+    "experiment": "E2",
+    "seed": 37,
+    "samples": 100000,
+    "logits_dtype": "fp32",
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "sampler_input_dtype": "torch.float32",
+    "input_quantization_max_abs": 0.0,
+    "input_quantization_changed_logits": 0,
+    "backend": "forward_native",
+    "tv_distance": 0.012446408697550367,
+    "max_abs_error": 0.0012507495831915183,
+    "tv_null_q95": 0.013948634676854619,
+    "tv_mc_pvalue": 0.5024875621890548,
+    "chi_square_mc_pvalue": 0.9950248756218906,
+    "token_bin_calibration_diagnostic": 8.272569684117896e-08,
+    "support_before_filter": 49152,
+    "support_after_filter": 49152,
+    "entropy_before_filter": 2.271364376820414,
+    "entropy_after_filter": 2.271364376820414,
+    "top_probability_after_filter": 0.40331008038794186,
+    "retained_pre_filter_mass": 0.9999999999999993,
+    "raw_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    },
+    "processed_logprobs": {
+      "max_abs_logprob_error": 1.9081315727476067e-06,
+      "mean_abs_logprob_error": 8.602354668503249e-07,
+      "support_mismatch_count": 0
+    }
+  }
+]

@@ -10,22 +10,23 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 DEFAULT_MODEL = "HuggingFaceTB/SmolLM2-135M-Instruct"
-DEFAULT_PROMPT = "Explain why the sky appears blue in one sentence."
+DEFAULT_REVISION = "12fd25f77366fa6b3b4b768ec3050bf629380bac"
+DEFAULT_PROMPT = "The sky appears blue because"
 
 
 def capture_logits(
     model_name: str,
     prompt: str,
     output_dir: Path,
-    dtype_name: str = "float16",
-    revision: str | None = None,
+    dtype_name: str = "float32",
+    revision: str | None = DEFAULT_REVISION,
 ) -> None:
     dtype = getattr(torch, dtype_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name, revision=revision)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         revision=revision,
-        torch_dtype=dtype,
+        dtype=dtype,
         device_map="auto",
     )
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
@@ -56,9 +57,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
-    parser.add_argument("--output-dir", type=Path, default=Path("data/model_logits/smollm2-135m"))
-    parser.add_argument("--dtype", choices=("float16", "bfloat16", "float32"), default="float16")
-    parser.add_argument("--revision")
+    parser.add_argument("--output-dir", type=Path, default=Path("data/model_logits/smollm2-135m-fp32"))
+    parser.add_argument("--dtype", choices=("float16", "bfloat16", "float32"), default="float32")
+    parser.add_argument("--revision", default=DEFAULT_REVISION)
     args = parser.parse_args()
     capture_logits(args.model, args.prompt, args.output_dir, args.dtype, args.revision)
 
