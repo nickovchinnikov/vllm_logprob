@@ -45,6 +45,21 @@ def generate_report(output_dir: Path) -> None:
         if logits_path is not None and logits_path.exists()
         else None
     )
+    mc_pvalues = [float(row["tv_mc_pvalue"]) for row in sample_rows if row.get("tv_mc_pvalue")]
+    tv_exceedances = sum(
+        float(row["tv_distance"]) > float(row["tv_null_q95"])
+        for row in sample_rows
+        if row.get("tv_distance") and row.get("tv_null_q95")
+    )
+    pvalues_below_threshold = sum(value < 0.05 for value in mc_pvalues)
+    evidence_summary = (
+        f"Across {len(mc_pvalues)} separate seed-runs, the minimum TV Monte Carlo p-value was "
+        f"{min(mc_pvalues):.5f}; {pvalues_below_threshold} were below 0.05 and "
+        f"{tv_exceedances} observed TV values exceeded their own null q95. "
+        "These are unadjusted exploratory comparisons, not a proof of equal distributions."
+        if mc_pvalues
+        else "No random sampling runs are recorded."
+    )
 
     baseline = next((row for row in sample_rows if row["experiment"] == "E2"), None)
     if baseline is not None:
@@ -123,8 +138,11 @@ def generate_report(output_dir: Path) -> None:
         f"- Backend: `{metadata.get('backend', 'not run')}`",
         f"- Device: `{metadata.get('device', 'not recorded')}`",
         f"- Samples per seed: `{metadata.get('samples_per_seed', 'not run')}`",
+        f"- Monte Carlo replicates per seed-run: `{metadata.get('mc_replicates', 'not recorded')}`",
         "",
         "The table reports each seed separately. Read empirical TV against that seed's multinomial null baseline; p-values are not averaged. The token-bin calibration diagnostic is retained in the CSV but excluded here because token errors can cancel within bins.",
+        "",
+        evidence_summary,
         "",
         "| ID | Seed | N | TV | Null TV q95 | TV MC p | Chi-square MC p | "
         "Max probability error | Support | Entropy | Raw logprob max error | Processed logprob max error |",

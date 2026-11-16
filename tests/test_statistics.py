@@ -53,6 +53,20 @@ def test_multinomial_baseline_is_reproducible_and_bounded():
     assert 0 < first["chi_square_mc_pvalue"] <= 1
 
 
+def test_numpy_multinomial_null_is_reproducible_across_batch_sizes():
+    probabilities = torch.tensor([0.7, 0.2, 0.1], dtype=torch.float64)
+
+    first = multinomial_null_distributions(
+        probabilities, sample_count=100, replicates=25, seed=7, batch_size=25
+    )
+    second = multinomial_null_distributions(
+        probabilities, sample_count=100, replicates=25, seed=7, batch_size=5
+    )
+
+    assert torch.equal(first[0], second[0])
+    assert torch.equal(first[1], second[1])
+
+
 def test_saved_null_samples_reproduce_baseline_metrics():
     probabilities = torch.tensor([0.7, 0.2, 0.1], dtype=torch.float64)
     counts = torch.tensor([70, 20, 10])
@@ -68,3 +82,50 @@ def test_saved_null_samples_reproduce_baseline_metrics():
     )
 
     assert saved == generated
+
+
+def test_counts_reject_fractional_and_nonfinite_values():
+    probabilities = torch.tensor([0.75, 0.25], dtype=torch.float64)
+
+    for counts in (
+        torch.tensor([7.5, 2.5]),
+        torch.tensor([float("nan"), 2.0]),
+        torch.tensor([-1, 11]),
+    ):
+        try:
+            multinomial_baseline(probabilities, counts)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"counts {counts} should be rejected")
+
+
+def test_null_samples_reject_nonfinite_and_negative_values():
+    probabilities = torch.tensor([0.75, 0.25], dtype=torch.float64)
+    counts = torch.tensor([7, 3])
+    invalid = (
+        (torch.tensor([float("nan")]), torch.tensor([1.0])),
+        (torch.tensor([-0.1]), torch.tensor([1.0])),
+        (torch.tensor([0.1]), torch.tensor([float("inf")])),
+    )
+
+    for null_samples in invalid:
+        try:
+            multinomial_baseline(probabilities, counts, null_samples=null_samples)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid null samples should be rejected")
+
+
+def test_probability_sum_contract_uses_explicit_float64_tolerance():
+    valid = torch.tensor([0.5, 0.5000000000004], dtype=torch.float64)
+    invalid = torch.tensor([0.5, 0.50000001], dtype=torch.float64)
+
+    assert compare_distributions(valid, valid)["tv_distance"] == 0
+    try:
+        compare_distributions(invalid / invalid.sum(), invalid)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unnormalized probability input should be rejected")

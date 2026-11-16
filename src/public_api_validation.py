@@ -42,6 +42,7 @@ def run(
         logits, temperature=temperature, top_p=top_p
     )
     before_filter = compute_processed_probs(logits, temperature=temperature, top_p=1.0)
+    mc_seed = seed + 1000003
 
     llm = LLM(
         model=model,
@@ -74,7 +75,7 @@ def run(
     empirical = counts.to(torch.float64) / token_ids.numel()
     metrics = compare_distributions(processed_reference, empirical)
     null_samples = multinomial_null_distributions(
-        processed_reference, token_ids.numel(), replicates=200, seed=seed
+        processed_reference, token_ids.numel(), replicates=10000, seed=mc_seed
     )
     metrics.update(
         multinomial_baseline(
@@ -118,6 +119,8 @@ def run(
         "v1_multiprocessing_enabled": False,
         "samples": int(token_ids.numel()),
         "seed": seed,
+        "mc_seed": mc_seed,
+        "mc_replicates": 10000,
         "temperature": temperature,
         "top_p": top_p,
         "reference_comparison": metrics,

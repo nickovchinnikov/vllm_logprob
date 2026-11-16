@@ -84,7 +84,7 @@ def run(
     if experiment_ids is not None and not experiment_ids <= known_ids:
         raise ValueError(f"unknown experiment IDs: {sorted(experiment_ids - known_ids)}")
 
-    for experiment in config["experiments"]:
+    for experiment_index, experiment in enumerate(config["experiments"]):
         experiment_id = experiment["id"]
         if experiment_ids is not None and experiment_id not in experiment_ids:
             continue
@@ -105,20 +105,21 @@ def run(
         if experiment.get("greedy", False):
             greedy_token, raw_logprobs = adapter.greedy(rounded_logits)
             reference_raw_logprobs = torch.log(compute_processed_probs(rounded_logits))
-            rows.append(
-                {
-                    "experiment": experiment_id,
-                    "seed": "",
-                    "samples": 1,
-                    "greedy_token_id": greedy_token,
-                    "reference_argmax_token_id": int(torch.argmax(expected).item()),
-                    "greedy_correct": greedy_token == int(torch.argmax(expected).item()),
-                    "raw_logprobs": _logprob_comparison(
-                        reference_raw_logprobs, raw_logprobs
-                    ),
-                    "backend": "argmax",
-                }
-            )
+            greedy_row = {
+                "experiment": experiment_id,
+                "seed": "",
+                "samples": 1,
+                "greedy_token_id": greedy_token,
+                "reference_argmax_token_id": int(torch.argmax(expected).item()),
+                "greedy_correct": greedy_token == int(torch.argmax(expected).item()),
+                "raw_logprobs": _logprob_comparison(
+                    reference_raw_logprobs, raw_logprobs
+                ),
+                "backend": "argmax",
+            }
+            if resume:
+                rows = [row for row in rows if row.get("experiment") != experiment_id]
+            rows.append(greedy_row)
             torch.save(
                 {
                     "raw_logprobs": raw_logprobs,
@@ -141,6 +142,11 @@ def run(
         experiment_seeds = experiment.get("seeds", settings["seeds"])
         seed_results = []
         for seed in experiment_seeds:
+            mc_seed = (
+                settings.get("mc_seed_base", 1000003)
+                + experiment_index * 100003
+                + int(seed)
+            )
             sample_ids, raw_logprobs, processed_logprobs = adapter.sample(
                 rounded_logits,
                 temperature=experiment["temperature"],
@@ -156,7 +162,8 @@ def run(
                 expected,
                 sample_count=count,
                 replicates=settings["mc_replicates"],
-                seed=seed,
+                seed=mc_seed,
+                batch_size=settings.get("mc_batch_size", 128),
             )
             metrics.update(
                 multinomial_baseline(
@@ -170,6 +177,7 @@ def run(
             row = {
                 "experiment": experiment_id,
                 "seed": seed,
+                "mc_seed": mc_seed,
                 "samples": count,
                 "logits_dtype": experiment["logits_dtype"],
                 "temperature": experiment["temperature"],
@@ -230,6 +238,7 @@ def run(
         "vllm_version": "0.11.0",
         "vllm_commit": "b8b302cde434df8c9289a2b465406b47ebab1c2d",
         "backend": adapter.backend,
+        "raw_logprobs_source": "vllm.v1.sample.sampler.Sampler.compute_logprobs",
         "device": str(adapter.device),
         "gpu_name": torch.cuda.get_device_name(adapter.device)
         if adapter.device.type == "cuda"
@@ -244,6 +253,8 @@ def run(
         if (logits_path.parent / "metadata.json").exists()
         else None,
         "samples_per_seed": count,
+        "mc_replicates": settings["mc_replicates"],
+        "mc_seed_base": settings.get("mc_seed_base", 1000003),
         "seeds": {item["id"]: item.get("seeds", settings["seeds"]) for item in config["experiments"]},
     }
     (output_dir / "run_metadata.json").write_text(

@@ -62,7 +62,9 @@ class VLLMDirectSampler:
         source = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
         if source.ndim != 1:
             raise ValueError("logits must be a one-dimensional vector")
-        raw_logprobs = source.log_softmax(dim=-1, dtype=torch.float32).cpu()
+        raw_logprobs = self.vllm_sampler.compute_logprobs(
+            source.unsqueeze(0)
+        )[0].cpu()
 
         torch.manual_seed(seed)
         if self.device.type == "cuda":

@@ -2,6 +2,7 @@
   "vllm_version": "0.11.0",
   "vllm_commit": "b8b302cde434df8c9289a2b465406b47ebab1c2d",
   "backend": "forward_native",
+  "raw_logprobs_source": "vllm.v1.sample.sampler.Sampler.compute_logprobs",
   "device": "cuda",
   "gpu_name": "NVIDIA GeForce RTX 5090 Laptop GPU",
   "python_version": "3.13.12",
@@ -29,6 +30,8 @@
     "logits_file": "data/model_logits/smollm2-135m-fp32/logits_fp32.pt"
   },
   "samples_per_seed": 100000,
+  "mc_replicates": 10000,
+  "mc_seed_base": 1000003,
   "seeds": {
     "E1": [
       11,

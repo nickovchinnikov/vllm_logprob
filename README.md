@@ -20,11 +20,17 @@ Capture the next-token logits once. The configured SmolLM2 revision is immutable
 python -m src.model
 ```
 
-The saved `logits_fp32.pt` is the fixed input for every configuration. A quick integration pass can reduce the sample count; the configured experiment defaults to 100,000 samples for each of three seeds per random configuration.
+The saved `logits_fp32.pt` is the fixed input for every configuration. A quick integration pass can reduce the sample count; the configured experiment defaults to 100,000 samples per seed and 10,000 multinomial null replicates per seed-run. The Monte Carlo RNG uses a separate deterministic seed from vLLM sampling.
 
 ```bash
 python -m src.experiment --samples 1000
 python -m src.experiment
+```
+
+To regenerate null p-values at a higher resolution from saved token IDs, without rerunning vLLM sampling:
+
+```bash
+python -m src.refresh_mc_baselines --replicates 10000
 ```
 
 Outputs include token IDs and reported vectors under `results/controlled_v2/raw/`, per-seed metrics in `results/controlled_v2/summary.csv`, plots under `results/controlled_v2/figures/`, and a generated report. Configurations E1-E10 are in [configs/experiments.yaml](configs/experiments.yaml). The sample count override is intended only for smoke testing, not final results. Long runs can be split with `--experiments` and continued using `--resume`.
@@ -39,7 +45,7 @@ It uses `LLM.generate` with one prompt and multiple one-token completions, saves
 
 ## What is and is not tested
 
-The reference path applies FP64 softmax, temperature, and the vLLM 0.11.0 top-p lower-tail rule. The direct adapter batches identical logits, requests `processed_logprobs`, and asserts the PyTorch-native backend. FP16/BF16 experiments quantize the FP32 model logits, then pass the quantized values back as FP32, matching the outer sampler's explicit FP32 conversion. The run records quantization deltas and actual sampler input dtype. Raw logprobs are calculated with the exact FP32 log-softmax operation identified in the pinned outer sampler. Greedy is checked as argmax, not treated as categorical sampling.
+The reference path applies FP64 softmax, temperature, and an independent descending-prefix definition of top-p. The direct adapter batches identical logits, requests `processed_logprobs`, and asserts the PyTorch-native backend. Support is tested directly against pinned vLLM for multiple logit shapes and boundary values; equal-probability ties may select different token identities while retaining the same support size. FP16/BF16 experiments quantize the FP32 model logits, then pass the quantized values back as FP32, matching the outer sampler's explicit FP32 conversion. The run records quantization deltas and actual sampler input dtype. Raw logprobs are obtained from vLLM's `Sampler.compute_logprobs`. Greedy is checked as argmax, not treated as categorical sampling.
 
 This MVP does not exercise public `LLM.generate`, the full outer sampler metadata/processors, FlashInfer, penalties, speculative decoding, or API-level full-vocabulary logprob serialization. It does not compare the RNG bitstreams across implementations; it compares distributions. `use_fp64_gumbel` is not part of this native exponential-race sampler path.
 

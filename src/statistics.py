@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import numpy as np
 import torch
+
+_PROBABILITY_SUM_ATOL = 1e-12
+_PROBABILITY_SUM_RTOL = 1e-10
 
 
 def _distribution(values: torch.Tensor, name: str) -> torch.Tensor:
@@ -11,9 +15,25 @@ def _distribution(values: torch.Tensor, name: str) -> torch.Tensor:
         raise ValueError(f"{name} must be a non-empty 1D vector")
     if not torch.isfinite(result).all() or torch.any(result < 0):
         raise ValueError(f"{name} must contain finite nonnegative values")
-    if not torch.isclose(result.sum(), torch.tensor(1.0, dtype=torch.float64)):
+    if not torch.isclose(
+        result.sum(),
+        torch.tensor(1.0, dtype=torch.float64),
+        atol=_PROBABILITY_SUM_ATOL,
+        rtol=_PROBABILITY_SUM_RTOL,
+    ):
         raise ValueError(f"{name} must sum to 1")
     return result
+
+
+def _counts(values: torch.Tensor, name: str) -> torch.Tensor:
+    result = torch.as_tensor(values, device="cpu")
+    if result.ndim != 1 or result.numel() == 0:
+        raise ValueError(f"{name} must be a non-empty 1D vector")
+    if not torch.isfinite(result).all() or torch.any(result < 0):
+        raise ValueError(f"{name} must contain finite nonnegative counts")
+    if torch.is_floating_point(result) and torch.any(result != torch.floor(result)):
+        raise ValueError(f"{name} must contain integer counts")
+    return result.to(torch.int64)
 
 
 def compare_distributions(
@@ -87,7 +107,7 @@ def chi_square_statistic(
 ) -> float:
     """Calculate Pearson's statistic, retaining all categories."""
     expected_probs = _distribution(probabilities, "probabilities")
-    observed = torch.as_tensor(counts, dtype=torch.float64, device="cpu")
+    observed = _counts(counts, "counts").to(torch.float64)
     if observed.shape != expected_probs.shape or torch.any(observed < 0):
         raise ValueError("counts must be nonnegative and match probabilities")
     expected = expected_probs * observed.sum()
@@ -101,13 +121,13 @@ def chi_square_statistic(
 def multinomial_baseline(
     probabilities: torch.Tensor,
     observed_counts: torch.Tensor,
-    replicates: int = 200,
+    replicates: int = 10000,
     seed: int = 0,
     null_samples: tuple[torch.Tensor, torch.Tensor] | None = None,
 ) -> dict[str, float]:
     """Estimate TV and chi-square null distributions by multinomial simulation."""
     expected = _distribution(probabilities, "probabilities")
-    observed = torch.as_tensor(observed_counts, dtype=torch.int64, device="cpu")
+    observed = _counts(observed_counts, "observed_counts")
     if observed.shape != expected.shape or torch.any(observed < 0):
         raise ValueError("observed_counts must be nonnegative and match probabilities")
     if replicates < 1:
@@ -130,6 +150,15 @@ def multinomial_baseline(
         chi_square_values = torch.as_tensor(null_samples[1], dtype=torch.float64, device="cpu")
         if tv_values.shape != chi_square_values.shape or tv_values.numel() == 0:
             raise ValueError("null sample vectors must have matching non-empty shapes")
+        if tv_values.ndim != 1:
+            raise ValueError("null samples must be one-dimensional")
+        if (
+            not torch.isfinite(tv_values).all()
+            or not torch.isfinite(chi_square_values).all()
+            or torch.any(tv_values < 0)
+            or torch.any(chi_square_values < 0)
+        ):
+            raise ValueError("null statistics must be finite and nonnegative")
     actual_replicates = tv_values.numel()
 
     return {
@@ -146,21 +175,33 @@ def multinomial_baseline(
 def multinomial_null_distributions(
     probabilities: torch.Tensor,
     sample_count: int,
-    replicates: int = 200,
+    replicates: int = 10000,
     seed: int = 0,
+    batch_size: int = 128,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Return simulated TV and Pearson-statistic null samples."""
     expected = _distribution(probabilities, "probabilities")
-    if sample_count < 1 or replicates < 1:
-        raise ValueError("sample_count and replicates must be positive")
+    if sample_count < 1 or replicates < 1 or batch_size < 1:
+        raise ValueError("sample_count, replicates, and batch_size must be positive")
 
-    generator = torch.Generator(device="cpu").manual_seed(seed)
-    tv_values = torch.empty(replicates, dtype=torch.float64)
-    chi_square_values = torch.empty(replicates, dtype=torch.float64)
-    for index in range(replicates):
-        draws = torch.multinomial(expected, sample_count, replacement=True, generator=generator)
-        counts = torch.bincount(draws, minlength=expected.numel())
-        frequencies = counts.to(torch.float64) / sample_count
-        tv_values[index] = 0.5 * torch.abs(expected - frequencies).sum()
-        chi_square_values[index] = chi_square_statistic(expected, counts)
-    return tv_values, chi_square_values
+    probability_array = expected.numpy()
+    expected_counts = sample_count * probability_array
+    included = expected_counts > 0
+    generator = np.random.default_rng(seed)
+    tv_batches = []
+    chi_square_batches = []
+    for start in range(0, replicates, batch_size):
+        current_batch = min(batch_size, replicates - start)
+        counts = generator.multinomial(
+            sample_count, probability_array, size=current_batch
+        )
+        frequencies = counts / sample_count
+        tv_batches.append(0.5 * np.abs(frequencies - probability_array).sum(axis=1))
+        chi_square_batches.append(
+            ((counts[:, included] - expected_counts[included]) ** 2 / expected_counts[included]).sum(axis=1)
+        )
+
+    return (
+        torch.from_numpy(np.concatenate(tv_batches)),
+        torch.from_numpy(np.concatenate(chi_square_batches)),
+    )

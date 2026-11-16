@@ -2,7 +2,9 @@ sampling:
   samples_per_seed: 100000
   seeds: [11, 23, 37]
   batch_size: 256
-  mc_replicates: 200
+  mc_replicates: 10000
+  mc_seed_base: 1000003
+  mc_batch_size: 128
 
 experiments:
   - id: E1

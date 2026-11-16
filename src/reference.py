@@ -31,18 +31,25 @@ def apply_temperature(logits: torch.Tensor, temperature: float) -> torch.Tensor:
 
 
 def apply_top_p(logits: torch.Tensor, top_p: float) -> torch.Tensor:
-    """Mask the lower-probability tail using vLLM 0.11.0's nucleus rule."""
+    """Retain the smallest descending-probability prefix reaching ``top_p``.
+
+    Equal-probability tokens at the cutoff can have implementation-specific
+    identities; only the retained probability mass is uniquely defined.
+    """
     if not math.isfinite(top_p) or not 0 < top_p <= 1:
         raise ValueError("top_p must be in (0, 1]")
 
     values = _as_logits(logits)
-    sorted_logits, sorted_indices = torch.sort(values, descending=False)
-    sorted_probs = torch.softmax(sorted_logits, dim=-1)
-    remove = torch.cumsum(sorted_probs, dim=-1) <= (1.0 - top_p)
-    remove[-1] = False
-
-    retained = torch.ones_like(values, dtype=torch.bool)
-    retained[sorted_indices] = ~remove
+    sorted_logits, sorted_indices = torch.sort(values, descending=True, stable=True)
+    cumulative = torch.cumsum(torch.softmax(sorted_logits, dim=-1), dim=-1)
+    cutoff = torch.searchsorted(
+        cumulative,
+        torch.tensor(top_p, dtype=torch.float64),
+        right=False,
+    )
+    retained_count = min(int(cutoff.item()) + 1, values.numel())
+    retained = torch.zeros_like(values, dtype=torch.bool)
+    retained[sorted_indices[:retained_count]] = True
     return values.masked_fill(~retained, -torch.inf)
 
 
